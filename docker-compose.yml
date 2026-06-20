@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: learn-xdebug-app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+    extra_hosts:
+      # Linux でも host.docker.internal を解決できるように
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-net
+
+  db:
+    image: mysql:8.0
+    container_name: learn-xdebug-db
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Tokyo
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - app-net
+
+volumes:
+  db-data:
+
+networks:
+  app-net:
