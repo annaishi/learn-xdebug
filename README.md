@@ -35,7 +35,7 @@ make init
 
 1. [① 環境設定の解説](docs/01-environment.md) — Docker / Xdebug の中身を理解する
 2. [② 動かし方](docs/02-run.md) — 起動して動作確認する
-3. [③ IDE でデバッグ](docs/xdebug-setup.md) — VSCode / PhpStorm を繋ぐ
+3. ③ IDE でデバッグ — [VSCode](docs/vscode-setup.md) / [PhpStorm ほか](docs/xdebug-setup.md)
 
 ログインの流れ（Controller → Service → Model）をステップ実行で追うのがおすすめです。
 
