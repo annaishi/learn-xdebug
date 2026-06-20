@@ -1,0 +1,11 @@
+# OS が生成するファイル
+.DS_Store
+Thumbs.db
+
+# IDE 設定（ルートに作られた場合）
+/.idea/
+/.vscode/
+/.zed/
+/.nova/
+
+# Laravel アプリ本体の除外ルールは src/.gitignore を参照
