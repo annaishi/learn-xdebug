@@ -29,11 +29,15 @@ make init
 
 新規登録から自分でアカウントを作ることもできます。
 
-## Xdebug を使ってみる
+## ハンズオン教材
 
-IDE（VSCode / PhpStorm）の設定手順は 👉 **[docs/xdebug-setup.md](docs/xdebug-setup.md)**
+対面で学ぶための資料を [docs/](docs/) にまとめています。上から順にどうぞ：
 
-ログインの流れ（Controller → Service → Model）を追うのがおすすめです。
+1. [① 環境設定の解説](docs/01-environment.md) — Docker / Xdebug の中身を理解する
+2. [② 動かし方](docs/02-run.md) — 起動して動作確認する
+3. [③ IDE でデバッグ](docs/xdebug-setup.md) — VSCode / PhpStorm を繋ぐ
+
+ログインの流れ（Controller → Service → Model）をステップ実行で追うのがおすすめです。
 
 ## ディレクトリ構成（MVCS）
 
