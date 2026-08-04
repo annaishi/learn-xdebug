@@ -1,11 +1,11 @@
 # ③-2 基本操作を体で覚える（ハンズオン）
 
 IDE が繋がってブレークポイントで止まるようになったら、次はこのページです。
-実際のログイン処理を題材に、**「ここに打つ → こう操作する → これが確認できる」**を
-1つずつ手を動かして体験します。演習問題はこのあとです。
+まず **合計金額を計算するだけの練習ページ**（`/playground`）で、ステップ実行など各操作の
+意味を体で覚えます。すべて自作コードだけを通るので、操作の違いがくっきり分かります。
+最後に、実際のログイン処理（Controller → Service）を追う**応用編**に進みます。
 
 > 前提：[VSCode セットアップ](./vscode-setup.md) を終え、▶ で待ち受け中（下バーがオレンジ）であること。
-> 題材：デモアカウント `demo@example.com` / `password` でのログイン処理。
 
 各レッスンの見方：
 - 📍 **打つ場所**（ブレークポイント）
@@ -23,13 +23,13 @@ IDE が繋がってブレークポイントで止まるようになったら、�
 
 ```php
 function checkout() {
-    $price = 100;            // ★ いまここで停止中
+    $price = 100;             // ★ いまここで停止中
     $tax   = calcTax($price); // ← この行には calcTax() の呼び出しがある
     echo $price + $tax;
 }
 
 function calcTax($p) {
-    return $p * 0.1;         // ← calcTax の中身
+    return $p * 0.1;          // ← calcTax の中身
 }
 ```
 
@@ -49,209 +49,223 @@ function calcTax($p) {
 - **Shift+F11（アウト）**：引用元を読み終えた（or 興味が失せた）ので、**元の本に戻る**。
 - **F5（続行）**：しおり（次のブレークポイント）まで**一気にページを飛ばす**。
 
-### 使い分けの勘どころ
+> このあと、この4つを練習ページで実際に試します。
 
-- 自分のロジックを丁寧に追いたい → **F10 で1行ずつ**、気になる関数で **F11**。
-- フレームワークなど中身に興味がない関数 → **F10 でまたぐ**（F11 で入ると迷子になりがち）。
-- 入った関数に用が済んだ → **Shift+F11 で抜ける**。
-- ここまでで十分、次の調査ポイントへ → **F5**。
+---
 
-> このあとのレッスンで、この4つを実際のログイン処理で1つずつ試します。
+# 練習ページで体験する（/playground）
+
+題材：http://localhost:8080/playground を開くと
+[PlaygroundController@index](../src/app/Http/Controllers/PlaygroundController.php#L16) →
+[OrderCalculator::calculate()](../src/app/Services/OrderCalculator.php#L33) が動き、
+カート3商品の合計金額を計算します。**ログイン不要**です。
+
+計算の流れ：
+```
+calculate()
+  ├─ 各商品について lineTotal()   … 単価 × 個数
+  ├─ calcDiscount()              … 小計が1万円以上なら10%割引
+  └─ calcTax()                   … 消費税10%
+```
 
 ---
 
 ## レッスン 0. まず「止まる」を確認する
 
-📍 [LoginController.php:34](../src/app/Http/Controllers/Auth/LoginController.php#L34)（`$this->authService->login(` の行）に ● を置く。
+📍 [OrderCalculator.php:38](../src/app/Services/OrderCalculator.php#L38)（`foreach ($items as $item) {` の行）に ● を置く。
 
-▶ ブラウザで http://localhost:8080/login を開き、デモアカウントでログインボタンを押す。
+▶ ブラウザで http://localhost:8080/playground を開く。
 
-✅ 34 行目が**黄色くハイライト**されて実行が一時停止する。これが「ブレークした」状態。
+✅ 38 行目が**黄色くハイライト**されて実行が一時停止する。これが「ブレークした」状態。
    ブラウザは「読み込み中…」のまま待っている（PHP が止まっているため）。
 
-> ここから先、各レッスンはこの「止まった状態」から始めます。
+> ここから先の多くのレッスンは、この「止まった状態」から始めます。
 
 ---
 
 ## レッスン 1. 変数の中身を見る（デバッグの主目的）
 
-止まったら、左サイドの **「変数」パネル**を見る。
+📍 レッスン0 の状態（38 行目で停止中）。
 
-✅ `Locals`（ローカル変数）を展開すると：
-- `$this` … LoginController 自身。さらに展開すると `authService`（注入された AuthService）が見える
-- `$request` … 送られてきたリクエスト。深く展開すると入力値にたどり着く
+✅ 左サイドの **「変数」パネル** → `Locals` を展開すると：
+- `$items` … カートの3商品（配列）。展開すると各商品の `name` / `unitPrice` / `quantity` が見える
+- `$subtotal` … まだ `0`（これから足し込む）
 
-✅ **入力値（フォームに打った値）はここで確認できる**：
-
-```
-$request
-└─ request  (Symfony … InputBag)
-   └─ parameters = array(3)
-      ├─ _token   = "Qpzai…"          ← CSRF トークン
-      ├─ email    = "demo@example.com" ← フォームに入力したメールアドレス
-      └─ password = "password"         ← 同じくパスワード
-```
-
-「画面で入力した値が、コードの `$request` の中にこう入っている」のを目で確認できる。
-（`$this->authService->login()` に渡している `$request->only('email','password')` の中身も、
-この `email` / `password` が元になっている）
-
-✅ 手早く見たいときは **エディタ上で変数にマウスを乗せる**（ホバー）と値がポップアップする。
-   例：34〜37 行の `$request` にカーソルを乗せてみる。
+✅ **エディタ上で変数にマウスを乗せる**（ホバー）と、その場で値がポップアップする。
 
 > 「`var_dump()` を書いて確認」していた作業が、コードを汚さずにできる、というのがキモ。
 
 ---
 
-## レッスン 2. Service の中に入る
+## レッスン 2. ステップイン F11 — 自作関数の“中”へ入る
 
-Controller([LoginController.php:34](../src/app/Http/Controllers/Auth/LoginController.php#L34)) から呼んでいる
-`AuthService::login()` の中に入って、処理を追ってみます。
+📍 [OrderCalculator.php:39](../src/app/Services/OrderCalculator.php#L39)（`$lineTotal = $this->lineTotal($item);`）に ● を置いて playground を開く。
+   → 1件目の商品（ノート）で止まる。
 
-### 方法A（おすすめ・確実）：入りたい場所に ● を置いて F5
+▶ **`F11`（ステップイン）** を押す。
 
-1. [AuthService.php:48](../src/app/Services/AuthService.php#L48) に ● を置く
-2. **`F5`（続行）** を押す
+✅ 実行が [OrderCalculator.php:54](../src/app/Services/OrderCalculator.php#L54)（`lineTotal()` の中）へ**飛び込む**。
+   「変数」パネルの `$item` は `name = "ノート", unitPrice = 300, quantity = 3`。
+   この行で `300 * 3 = 900` が計算される。
 
-✅ そのまま `login()` の中で止まる。
-   **「特定のメソッドの中を調べたい」なら、そこに ● を置いて F5 が一番速くて確実。**
-
-### 方法B：ステップイン F11 で1歩ずつ入る（挙動の理解）
-
-34 行目で止めて `F11`（ステップイン）を押すと、実は `login()` ではなく
-**`$request->only()`（Laravel 内部）に入ります。** これは正常です。
-
-なぜなら **F11 は「その行で“次に実行される関数”」に入る**から。34 行目は `login()` の引数として
-`$request->only(...)` を呼んでおり、PHP は引数を先に評価するので、最初の `only()` に入ります。
-
-`login()` まで辿り着くには `Shift+F11`（ステップアウト）→`F11` を繰り返します
-（`only()` → `boolean()` → 3回目で `login()`）。手数が多いので、狙い撃ちなら方法A。
-
-> F11 は「いま実行している流れを1歩ずつ追いたい」とき向き。
-> 「あの関数の中を見たい」ときは方法A（● + F5）が定石。
-
-### login() の中に入れたら
-
-✅ 「変数」パネルで、`login()` が受け取った引数を確認：
-- `$credentials` … `['email' => 'demo@example.com', 'password' => 'password']`
-- `$remember` … `false`
-
-   Controller → Service へ処理が移った（これが MVCS の流れ）。
+> フレームワークに潜らず、**自分の関数の中に素直に入れる**のがポイント。
 
 ---
 
-## レッスン 3. ステップオーバー F10 — 1行ずつ進む（中には入らない）
+## レッスン 3. ステップオーバー F10 — 中に入らず1行ずつ
 
-📍 [AuthService.php:48](../src/app/Services/AuthService.php#L48)（`if (! Auth::attempt(...))` の行）で止まっている状態。
+📍 レッスン2 と同じく [OrderCalculator.php:39](../src/app/Services/OrderCalculator.php#L39) で止まった状態から（ページを開き直す）。
 
-▶ **`F10`（ステップオーバー）** を1回押す。
+▶ **`F10`（ステップオーバー）** を押す。
 
-✅ `Auth::attempt()`（Laravel フレームワーク内部）の**中には入らず**、認証処理を一気に実行して
-   次の自分のコードへ進む。正しいパスワードなら 48 行の判定を抜けて
-   [AuthService.php:55](../src/app/Services/AuthService.php#L55)（`session()->regenerate()`）へ。
+✅ `lineTotal()` の**中には入らず**、計算結果だけ受け取って次の行
+   [OrderCalculator.php:40](../src/app/Services/OrderCalculator.php#L40) へ進む。
+   `$lineTotal` に `900` が入っているのを確認。
 
-> F10 と F11 の違いがデバッグ効率を左右する：
-> - **F10**：その行を実行して次の行へ（フレームワーク内部には踏み込まない＝速い）
-> - **F11**：呼び出している関数の中まで入る（自分のロジックを追いたいとき）
+> **F11 と F10 の違いがこれで体感できる**：
+> - F11 … `lineTotal()` の中（54 行）へ入る
+> - F10 … `lineTotal()` は実行するが中には入らず、次の自分の行へ
 
 ---
 
-## レッスン 4. コールスタックで「今どこから来たか」を見る
+## レッスン 4. ステップアウト Shift+F11 — 呼び出し元へ戻る
 
-📍 `login()` の中（例：48 行）で止まっている状態。
+📍 レッスン2 の手順で `lineTotal()` の中（[54 行](../src/app/Services/OrderCalculator.php#L54)）にいる状態。
 
-✅ 左サイドの **「コールスタック」パネル**を見る。下から上へ、こう積まれている：
+▶ **`Shift+F11`（ステップアウト）** を押す。
+
+✅ `lineTotal()` を最後まで実行し、呼び出し元
+   [OrderCalculator.php:39](../src/app/Services/OrderCalculator.php#L39) の直後（40 行）に戻る。
+   「この関数はもう十分、呼び出し元に戻りたい」ときに使う。
+
+---
+
+## レッスン 5. ループで変数が変わる様子を見る（ウォッチ式）
+
+📍 [OrderCalculator.php:40](../src/app/Services/OrderCalculator.php#L40)（`$subtotal += $lineTotal;`）に ● を置いて playground を開く。
+
+▶ 左サイドの **「ウォッチ」パネル**の `+` で式を登録：
+- `$subtotal`
+- `$item['name']`
+
+▶ **`F5`（続行）** を押すたびに、ループの次の周回で再び 40 行に止まる。
+
+✅ 周回ごとに値が変化するのを追える：
+
+| 周回 | `$item['name']` | `$subtotal`（実行後） |
+|------|-----------------|------------------------|
+| 1 | ノート | 900 |
+| 2 | ボールペン | 2,400 |
+| 3 | デスクライト | 12,000 |
+
+> ループ内に ● を置くと**毎周回で止まる**。変数がどう積み上がるかを目で追える。
+
+---
+
+## レッスン 6. 分岐（if）を追う
+
+📍 [OrderCalculator.php:60](../src/app/Services/OrderCalculator.php#L60)（`if ($subtotal >= 10000) {`）に ● を置いて playground を開く。
+
+✅ 止まったら `$subtotal` を確認 → `12000`。
+
+▶ **`F11`（または `F10`）** で1行進める。
+
+✅ `12000 >= 10000` は **true** なので、`if` の中
+   [OrderCalculator.php:61](../src/app/Services/OrderCalculator.php#L61)（割引 10% を計算）へ進む。
+   もし小計が1万円未満だったら、この中には入らず `return 0;` 側へ進む
+   ——という**分岐の意味**を、実行の流れで理解できる。
+
+---
+
+## レッスン 7. コールスタックで「今どこから来たか」を見る
+
+📍 レッスン2 の手順で `lineTotal()` の中（[54 行](../src/app/Services/OrderCalculator.php#L54)）で止まっている状態。
+
+✅ 左サイドの **「コールスタック」パネル**に、呼び出しの積み重なりが見える：
 
 ```
-AuthService->login()          ← 今ここ
-LoginController->store()      ← ここから呼ばれた
-（その下に Laravel のルーティング等）
+OrderCalculator->lineTotal()   ← 今ここ
+OrderCalculator->calculate()   ← ここから呼ばれた
+PlaygroundController->index()  ← さらにその親
 ```
 
-▶ スタックの **`LoginController->store()` をクリック**してみる。
-
-✅ エディタが store() の該当行に切り替わり、その階層の変数（`$request` など）を確認できる。
+▶ スタックの **`calculate()` をクリック**すると、その階層の変数（`$subtotal` など）を確認できる。
    「どの経路でこの関数に入ったか」を遡れる。
 
 ---
 
-## レッスン 5. ステップアウト Shift+F11 — 呼び出し元へ戻る
+## レッスン 8. 条件付きブレークポイント — 特定の時だけ止める
 
-📍 `login()` の中で止まっている状態。
+📍 [OrderCalculator.php:39](../src/app/Services/OrderCalculator.php#L39) の ● を**右クリック → 「ブレークポイントの編集」**。
+   「式」を選び、次を入力：
 
-▶ **`Shift+F11`（ステップアウト）** を押す。
+```php
+$item['name'] === 'デスクライト'
+```
 
-✅ `login()` を最後まで実行し、呼び出し元の
-   [LoginController.php:34](../src/app/Http/Controllers/Auth/LoginController.php#L34) の直後（40 行付近）に戻る。
-   「この関数の残りは飛ばして、呼び出し元に戻りたい」ときに使う。
+▶ playground を開く。
+
+✅ ノート・ボールペンの周回では止まらず、**デスクライトの周回だけ**で止まる。
+   ループや大量データの中から「この条件のときだけ調べたい」場面で強力。
 
 ---
 
-## レッスン 6. 続行 F5 と、処理の最後まで
+## レッスン 9. デバッグコンソール — その場で式を評価
 
-▶ **`F5`（続行）** を押す。
+📍 `calculate()` の中で止まっている状態（どのレッスンでも可）。
 
-✅ 次のブレークポイントまで（無ければ最後まで）一気に実行。
-   ブレークが他に無ければ処理が完了し、ブラウザがダッシュボードに遷移する。
+▶ 下部の **「デバッグコンソール」**に式を打ち込んで `Enter`。例：
+- `$subtotal`
+- `$item`
+- `$subtotal * 0.1`
+
+✅ 停止中のコンテキストで式が評価され、結果が表示される。
+   「この値ってどうなる？」をその場で試せる。
+
+---
+
+## レッスン 10. 続行 F5 — 最後まで走らせる
+
+▶ ブレークポイントを全部外し（または残したまま）、**`F5`（続行）** を押す。
+
+✅ 次の ● まで（無ければ最後まで）一気に実行され、
+   ブラウザに合計 **11,880 円** の表が表示される。
 
 > 「止める → 見る → F5 で続行」が基本のリズム。
 
 ---
 
-## レッスン 7. ウォッチ式 — 注目したい値を常に表示
+# 応用編：ログイン処理を追う（Controller → Service）
 
-📍 もう一度ログインして `login()` の中で止める。
+操作に慣れたら、実際のアプリの流れも追ってみましょう。
+題材：http://localhost:8080/login でデモアカウント `demo@example.com` / `password` を送信。
 
-▶ 左サイドの **「ウォッチ」パネル**の `+` を押し、式を登録する。例：
-- `$credentials['email']`
-- `$remember`
+## A. Service の中に入って引数を見る
 
-✅ ステップ実行で行が進むたびに、登録した式の値が**自動更新**される。
-   毎回変数パネルを掘らなくても、注目している値だけ追える。
+📍 [AuthService.php:48](../src/app/Services/AuthService.php#L48)（`if (! Auth::attempt(...))`）に ● を置く。
 
----
+▶ ブラウザでログインする → 48 行で止まる。
 
-## レッスン 8. デバッグコンソール — その場で式を評価
+✅ 「変数」パネルで、Controller から渡ってきた引数を確認：
+- `$credentials` … `['email' => 'demo@example.com', 'password' => 'password']`
+- `$remember` … `false`
 
-📍 `login()` の中で止まっている状態。
+> **メモ：特定のメソッドの中を見たいときは、そこに ● を置いて `F5` が確実。**
+> [LoginController.php:34](../src/app/Http/Controllers/Auth/LoginController.php#L34) の
+> `login(...)` の行で `F11` を押すと、引数で呼んでいる `$request->only(...)`（フレームワーク内部）に
+> 先に入ってしまいます。これは「F11 はその行で次に実行される関数に入る」ため。
+> 狙ったメソッドは ● + F5 で直接止めるのが定石です。
 
-▶ 下部の **「デバッグコンソール」**に式を打ち込んで `Enter`。例：
-- `$credentials`
-- `$credentials['email']`
-- `strtoupper($credentials['email'])`
+## B. 成功と失敗で分岐が変わるのを見る
 
-✅ 停止中のコンテキストで式が評価され、結果が表示される。
-   「この値ってどうなってる？」をその場で試せる（一時的な計算もOK）。
+📍 同じ [AuthService.php:48](../src/app/Services/AuthService.php#L48) で止まった状態から `F10` で進める。
 
----
-
-## レッスン 9. 条件付きブレークポイント — 特定の時だけ止める
-
-📍 [AuthService.php:48](../src/app/Services/AuthService.php#L48) の ● を**右クリック → 「ブレークポイントの編集」**。
-   「式」を選び、次を入力：
-
-```php
-$credentials['email'] === 'demo@example.com'
-```
-
-▶ 別アカウントとデモアカウントの両方でログインを試す。
-
-✅ **条件に合致したリクエストのときだけ**止まる。
-   ループや大量リクエストの中から「この条件のときだけ調べたい」場面で強力。
-
----
-
-## レッスン 10. 失敗ルートを追う（わざと間違える）
-
-📍 [AuthService.php:48](../src/app/Services/AuthService.php#L48) に ●。
-   （レッスン9の条件を付けていたら外しておく）
-
-▶ **わざと間違ったパスワード**でログインし、48 行で止まったら `F11` で中へ。
-
-✅ `Auth::attempt()` が `false` を返すと、`if` の中＝
-   [AuthService.php:49](../src/app/Services/AuthService.php#L49) の `throw`（例外）に進む。
-   成功時（レッスン3）と**分岐が変わる**様子を目で確認できる。
-   このあと例外が投げられ、ログイン画面にエラーメッセージが出る流れを追える。
+✅ 分岐を観察：
+- **正しいパスワード** → `Auth::attempt()` が `true` を返し、`if` を抜けて
+  [AuthService.php:55](../src/app/Services/AuthService.php#L55)（セッション再生成）へ。
+- **わざと間違ったパスワード** → `false` になり、`if` の中
+  [AuthService.php:49](../src/app/Services/AuthService.php#L49)（例外を投げる）へ進む。
+  → ログイン画面にエラーが表示される流れを追える。
 
 ---
 
@@ -269,5 +283,4 @@ $credentials['email'] === 'demo@example.com'
 | 値を監視 | — | ウォッチパネル |
 | 条件付き停止 | — | ●を右クリック→編集 |
 
-ここまでできれば、Xdebug の基本操作は一通り身についています。
-次は実戦 👉 演習問題（バグ調査）へ。
+ここまでできれば、Xdebug の基本操作は一通り身についています。次は実戦（演習問題）へ。

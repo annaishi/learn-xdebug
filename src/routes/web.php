@@ -3,10 +3,14 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PlaygroundController;
 use Illuminate\Support\Facades\Route;
 
 // トップページはログイン画面へ
 Route::get('/', fn () => redirect()->route('login'));
+
+// Xdebug 操作の練習用ページ（ログイン不要）
+Route::get('/playground', [PlaygroundController::class, 'index'])->name('playground');
 
 // --- 未ログインのユーザー向け (guest ミドルウェア) ---
 Route::middleware('guest')->group(function () {
