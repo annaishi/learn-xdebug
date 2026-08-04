@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\PlaygroundController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,10 @@ Route::get('/', fn () => redirect()->route('login'));
 // Xdebug 操作の練習用ページ（ログイン不要）
 Route::get('/playground', [PlaygroundController::class, 'index'])->name('playground');
 Route::post('/playground', [PlaygroundController::class, 'calculate'])->name('playground.calculate');
+
+// Xdebug 演習ページ（バグ入り・ログイン不要）
+Route::get('/exercise', [ExerciseController::class, 'index'])->name('exercise');
+Route::post('/exercise', [ExerciseController::class, 'calculate'])->name('exercise.calculate');
 
 // --- 未ログインのユーザー向け (guest ミドルウェア) ---
 Route::middleware('guest')->group(function () {
