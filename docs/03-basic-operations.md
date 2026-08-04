@@ -55,10 +55,14 @@ function calcTax($p) {
 
 # 練習ページで体験する（/playground）
 
-題材：http://localhost:8080/playground を開くと
-[PlaygroundController@index](../src/app/Http/Controllers/PlaygroundController.php#L16) →
+題材：http://localhost:8080/playground を開き、**各商品の個数を入力して「計算する」を押す**と
+[PlaygroundController@calculate](../src/app/Http/Controllers/PlaygroundController.php#L29) →
 [OrderCalculator::calculate()](../src/app/Services/OrderCalculator.php#L33) が動き、
-カート3商品の合計金額を計算します。**ログイン不要**です。
+合計金額を計算します。**ログイン不要**です。
+
+> 「入力した値がコードの中をどう流れるか」を追えるのがポイント。
+> このあとのレッスンは、**ブレークポイントを置いてから「計算する」を押す**と止まります。
+> 初期値（ノート3・ボールペン10・デスクライト2）のまま計算すると、下記レッスンの数値と一致します。
 
 計算の流れ：
 ```
@@ -74,7 +78,7 @@ calculate()
 
 📍 [OrderCalculator.php:38](../src/app/Services/OrderCalculator.php#L38)（`foreach ($items as $item) {` の行）に ● を置く。
 
-▶ ブラウザで http://localhost:8080/playground を開く。
+▶ ブラウザで http://localhost:8080/playground を開き、個数はそのまま **「計算する」を押す**。
 
 ✅ 38 行目が**黄色くハイライト**されて実行が一時停止する。これが「ブレークした」状態。
    ブラウザは「読み込み中…」のまま待っている（PHP が止まっているため）。
@@ -88,12 +92,21 @@ calculate()
 📍 レッスン0 の状態（38 行目で停止中）。
 
 ✅ 左サイドの **「変数」パネル** → `Locals` を展開すると：
-- `$items` … カートの3商品（配列）。展開すると各商品の `name` / `unitPrice` / `quantity` が見える
+- `$items` … 計算対象の3商品（配列）。展開すると各商品の `name` / `unitPrice` / `quantity` が見える。
+  この `quantity` が**さっきフォームに入力した個数**になっているのを確認！
 - `$subtotal` … まだ `0`（これから足し込む）
 
 ✅ **エディタ上で変数にマウスを乗せる**（ホバー）と、その場で値がポップアップする。
 
 > 「`var_dump()` を書いて確認」していた作業が、コードを汚さずにできる、というのがキモ。
+
+### おまけ：入力値が「届いた瞬間」を見る
+
+📍 [PlaygroundController.php:31](../src/app/Http/Controllers/PlaygroundController.php#L31)（`$catalog = ...` の直前）に ● を置いて「計算する」を押す。
+
+✅ 「変数」パネルで `$request` を展開すると、フォームで入力した `quantities`（個数）が
+   そのまま入っている。ここが「画面の入力がコードに渡ってくる入口」。
+   このあと 37 行目で各商品の `quantity` に合体され、`calculate()` に渡っていく。
 
 ---
 
@@ -184,12 +197,12 @@ calculate()
 ✅ 左サイドの **「コールスタック」パネル**に、呼び出しの積み重なりが見える：
 
 ```
-OrderCalculator->lineTotal()   ← 今ここ
-OrderCalculator->calculate()   ← ここから呼ばれた
-PlaygroundController->index()  ← さらにその親
+OrderCalculator->lineTotal()        ← 今ここ
+OrderCalculator->calculate()        ← ここから呼ばれた
+PlaygroundController->calculate()   ← さらにその親（フォーム送信の受け口）
 ```
 
-▶ スタックの **`calculate()` をクリック**すると、その階層の変数（`$subtotal` など）を確認できる。
+▶ スタックの **`OrderCalculator->calculate()` をクリック**すると、その階層の変数（`$subtotal` など）を確認できる。
    「どの経路でこの関数に入ったか」を遡れる。
 
 ---

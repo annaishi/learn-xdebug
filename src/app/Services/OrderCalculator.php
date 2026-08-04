@@ -14,13 +14,13 @@ namespace App\Services;
  */
 class OrderCalculator
 {
-    /** ハンズオン用の固定カート（3商品） */
-    public function sampleCart(): array
+    /** 商品カタログ（個数はフォームから入力される） */
+    public function catalog(): array
     {
         return [
-            ['name' => 'ノート',       'unitPrice' => 300,  'quantity' => 3],
-            ['name' => 'ボールペン',   'unitPrice' => 150,  'quantity' => 10],
-            ['name' => 'デスクライト', 'unitPrice' => 4800, 'quantity' => 2],
+            ['name' => 'ノート',       'unitPrice' => 300],
+            ['name' => 'ボールペン',   'unitPrice' => 150],
+            ['name' => 'デスクライト', 'unitPrice' => 4800],
         ];
     }
 

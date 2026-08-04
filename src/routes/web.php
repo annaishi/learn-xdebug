@@ -11,6 +11,7 @@ Route::get('/', fn () => redirect()->route('login'));
 
 // Xdebug 操作の練習用ページ（ログイン不要）
 Route::get('/playground', [PlaygroundController::class, 'index'])->name('playground');
+Route::post('/playground', [PlaygroundController::class, 'calculate'])->name('playground.calculate');
 
 // --- 未ログインのユーザー向け (guest ミドルウェア) ---
 Route::middleware('guest')->group(function () {
