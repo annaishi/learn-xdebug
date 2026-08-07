@@ -67,6 +67,28 @@ PhpStorm の人は [xdebug-setup.md](./xdebug-setup.md) を参照してくださ
 **接続できてもブレークポイントが効きません**。`port` の `9003` はコンテナ側
 （[docker/php/conf.d/xdebug.ini](../docker/php/conf.d/xdebug.ini)）と一致させます。
 
+### （任意）ライブラリに潜らないようにする — `ignore`
+
+`F11`（ステップイン）は `vendor/` のライブラリや Laravel 本体の中にも入れてしまい、
+自分のコードを追いたいだけなのに**フレームワークの奥で迷子**になりがちです。
+`ignore` に glob を足すと、その範囲はステップ対象から外せます。
+
+```json
+{
+    "name": "Listen for Xdebug",
+    "type": "php",
+    "request": "launch",
+    "port": 9003,
+    "pathMappings": {
+        "/var/www/html": "${workspaceFolder}/src"
+    },
+    "ignore": ["**/vendor/**/*.php"]
+}
+```
+
+これで `F11` しても `vendor/` はスキップし、**自分の `app/` のコードだけ**を追えます。
+（逆にライブラリの中を調べたいときは外す）
+
 ---
 
 ## ステップ 3. ★ 待ち受けを開始する（▶）
