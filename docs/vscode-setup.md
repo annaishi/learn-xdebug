@@ -112,6 +112,10 @@ PhpStorm の人は [xdebug-setup.md](./xdebug-setup.md) を参照してくださ
 - [src/app/Http/Controllers/Auth/LoginController.php](../src/app/Http/Controllers/Auth/LoginController.php) の `store()` 内
 - [src/app/Services/AuthService.php](../src/app/Services/AuthService.php) の `login()` 内
 
+> 💡 **条件付きで止めたいとき**：●を**右クリック →「ブレークポイントの編集」**で条件を付けられます。
+> 「式」に `$subtotal >= 10000` のような式を入れると**その式が true のときだけ**、
+> 「ヒットカウント」に `3` を入れると**3回目だけ**止まります（ループや大量データで便利）。
+
 ---
 
 ## ステップ 5. ブラウザでアクセスして止める
